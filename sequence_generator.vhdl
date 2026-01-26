@@ -8,7 +8,6 @@ entity sequence_generator is
   port (
     clk, enable, reset: in std_logic;
     sequence: out sequence_t;
-    sequence_len: out unsigned(4 downto 0);
     finished: out boolean
 );
 end entity;
@@ -54,7 +53,7 @@ begin
 
   next_item <= item_from_num(random_num);
   PROC: process (clk, reset)
-    variable sequence_store: sequence_t := (others => BLUE);
+    variable sequence_store: sequence_arr_t := (others => BLUE);
     variable sequence_len_store: unsigned(4 downto 0) := "00000";
     variable next_len: unsigned(5 downto 0) := "000000";
     variable finished_store: boolean := false;
@@ -75,8 +74,8 @@ begin
       end if;
     end if;
 
-    sequence <= sequence_store;
-    sequence_len <= sequence_len_store;
+    sequence.arr <= sequence_store;
+    sequence.len <= sequence_len_store;
     finished <= finished_store;
   end process;
   

@@ -9,14 +9,12 @@ entity simon_seq_tb is end entity;
 architecture arch of simon_seq_tb is
   signal clock: std_logic;
   signal sequence: sequence_t;
-  signal sequence_len: unsigned(4 downto 0);
   signal finished: boolean;
 
   component sequence_generator is
   port (
     clk, enable, reset: in std_logic;
     sequence: out sequence_t;
-    sequence_len: out unsigned(4 downto 0);
     finished: out boolean
     );
   end component;
@@ -26,7 +24,6 @@ begin
     enable => '1',
     reset => '0',
     sequence => sequence,
-    sequence_len => sequence_len,
     finished => finished
   );
 

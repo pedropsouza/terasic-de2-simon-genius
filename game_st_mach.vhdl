@@ -1,6 +1,7 @@
 library IEEE;
 library work;
 use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
 use work.simon_game.all;
 
 -- game control signals come from this state machine
@@ -30,18 +31,18 @@ begin
 
   FETCH_CORRECT: process (sequence, sequence_needle)
   begin
-    correct_symbol <= sequence(sequence_needle);
+    correct_symbol <= sequence.arr(to_integer(sequence_needle));
   end process;
 
-  INPUT_TEST: process (player_input, correct_symbol)
+  INPUT_TEST: block
   begin
     with correct_symbol select is_correct <=
-      (player_input.blue = '1') when BLUE,
-      (player_input.yellow = '1') when YELLOW,
-      (player_input.green = '1') when GREEN,
-      (player_input.red = '1') when RED,
+      player_input.blue when BLUE,
+      player_input.yellow when YELLOW,
+      player_input.green when GREEN,
+      player_input.red when RED,
       '0' when others;
-  end process;
+  end block;
   
   STAGE_REG_PROC: process (clock)
   begin
@@ -74,10 +75,10 @@ begin
         new_symbol <= '0';
         reset_sequence <= '0';
         
-        if (   player_input.blue
+        if (   std_logic(player_input.blue
             or player_input.yellow
             or player_input.green
-            or player_input.red)
+            or player_input.red) = '1')
         then
           if (is_correct = '1')
           then next_stage <= PASS;

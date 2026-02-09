@@ -35,13 +35,15 @@ architecture arch of game is
     );
   end component;
 
-  signal player_input: player_input_t;
+  signal player_input: input_t;
   signal sequence: sequence_t;
   signal wakeup: std_logic;
   signal teach_end: std_logic;
   
   signal new_symbol: std_logic;
   signal reset_sequence: std_logic;
+  signal sequence_finished: std_logic;
+  signal sequence_finished_bool: boolean;
   signal stage: game_stage_t := ASLEEP;
 begin
   SEQ_GEN: sequence_generator port map (
@@ -49,7 +51,7 @@ begin
     enable => new_symbol,
     reset => reset_sequence,
     sequence => sequence,
-    finished => sequence_finished
+    finished => sequence_finished_bool
   );
 
   ST_MACH: game_st_mach port map (
@@ -74,4 +76,9 @@ begin
     player_input.green <= buttons(2);
     player_input.red <= buttons(3);
   end block;
+
+  -- sequence_finished <= std_logic(sequence_finished_bool);
+  with sequence_finished_bool select sequence_finished <=
+    '1' when true,
+    '0' when others;
 end architecture;

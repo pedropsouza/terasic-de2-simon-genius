@@ -1,39 +1,39 @@
-library IEEE;
-library work;
-use IEEE.std_logic_1164.all;
-use work.simon_game.all;
-
-entity simon_tb is end entity;
-
-architecture simon_arch of simon_tb is
-  signal buttons: std_logic_vector(3 downto 0) := (others => '0');
-  signal button_lights: std_logic_vector(3 downto 0) := (others => '0');
-  signal clock: std_logic;
-  signal game_stage: game_stage_t;
-begin
-
-  CLOCK_SIM: process
-    begin
-      clock <= '0', '1' after 40 ns;
-      -- repeat indefinitely
-    end process;
-  
-  PERFECT_PLAYER: process
-    variable i: natural := 0;
-    constant sequence: sequence_t := (
-      arr => (
-        BLUE, BLUE, BLUE, YELLOW, YELLOW, YELLOW, YELLOW, RED, GREEN,
-        GREEN, GREEN, RED, YELLOW, BLUE, BLUE, GREEN, GREEN, BLUE, YELLOW,
-        BLUE, BLUE, YELLOW, RED, BLUE, YELLOW, RED, RED, BLUE, RED, RED,
-        RED, BLUE),
-      len => 32);
-    begin
-      -- wakeup and get taught
-      buttons(0) <= '1', '0' after 40
-      --
-      for i in 0 to sequence.len - 1 loop
-        
-      end loop;
-    end process;
-  
-end architecture;
+--library IEEE;
+--library work;
+--use IEEE.std_logic_1164.all;
+--use work.simon_game.all;
+--
+--entity simon_tb is end entity;
+--
+--architecture simon_arch of simon_tb is
+  --signal buttons: std_logic_vector(3 downto 0) := (others => '0');
+  --signal button_lights: std_logic_vector(3 downto 0) := (others => '0');
+  --signal clock: std_logic;
+  --signal game_stage: game_stage_t;
+--begin
+--
+  --CLOCK_SIM: process
+    --begin
+      --clock <= '0', '1' after 40 ns;
+      ---- repeat indefinitely
+    --end process;
+ -- 
+  --PERFECT_PLAYER: process
+    --variable i: natural := 0;
+    --constant sequence: sequence_t := (
+      --arr => (
+        --BLUE, BLUE, BLUE, YELLOW, YELLOW, YELLOW, YELLOW, RED, GREEN,
+        --GREEN, GREEN, RED, YELLOW, BLUE, BLUE, GREEN, GREEN, BLUE, YELLOW,
+        --BLUE, BLUE, YELLOW, RED, BLUE, YELLOW, RED, RED, BLUE, RED, RED,
+        --RED, BLUE),
+      --len => 32);
+    --begin
+      ---- wakeup and get taught
+      --buttons(0) <= '1', '0' after 40
+      ----
+      --for i in 0 to sequence.len - 1 loop
+       -- 
+      --end loop;
+    --end process;
+ -- 
+--end architecture;

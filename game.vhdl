@@ -2,6 +2,7 @@ library IEEE;
 library work;
 use IEEE.std_logic_1164.all;
 use IEEE.std_logic_misc.all; -- Contains or_reduce
+use IEEE.numeric_std.all;
 use work.simon_game.all;
 
 entity game is port(
@@ -49,8 +50,8 @@ architecture arch of game is
 begin
   GAME_CLOCK_GEN: process(clock)
     -- remember to check if the set period constants won't overflow the counters
-    variable clock_div_counter: unsigned(27 downto 0) := 0;
-    constant period_ns: unsigned(27 downto 0) := 100000000; -- 2 seconds
+    variable clock_div_counter: unsigned(27 downto 0) := to_unsigned(0, 28);
+    constant period_ns: unsigned(27 downto 0) := to_unsigned(100000000, 28); -- 2 seconds
     constant half_period_ns: unsigned(27 downto 0) := period_ns / 2;
   begin
     if rising_edge(clock) then
@@ -93,17 +94,19 @@ begin
   PLAYER_INPUT_FILTER: process(buttons, game_clock)
     variable blue, yellow, green, red: std_logic := '0';
   begin
-    blue := buttons(0) or blue;
-    yellow := buttons(1) or yellow;
-    green := buttons(2) or green;
-    red := buttons(3) or red;
+    -- we need to implement latching for the buttons still
+    --blue := buttons(0) or blue;
+    --yellow := buttons(1) or yellow;
+    --green := buttons(2) or green;
+    --red := buttons(3) or red;
     
     if rising_edge(game_clock) then
-      if (std_logic(player_input.blue
-                    or player_input.yellow
-                    or player_input.green
-                    or player_input.red) = '1') then
+      if (or_reduce(buttons) = '1') then
         -- do not clear if button held
+        blue := '0';
+        yellow := '0';
+        green := '0';
+        red := '0';
       else
         blue := '0';
         yellow := '0';

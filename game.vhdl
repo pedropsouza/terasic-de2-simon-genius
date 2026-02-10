@@ -45,9 +45,29 @@ architecture arch of game is
   signal sequence_finished: std_logic;
   signal sequence_finished_bool: boolean;
   signal stage: game_stage_t := ASLEEP;
+  signal game_clock: std_logic := '0';
 begin
+  GAME_CLOCK_GEN: process(clock)
+    -- remember to check if the set period constants won't overflow the counters
+    variable clock_div_counter: unsigned(27 downto 0) := 0;
+    constant period_ns: unsigned(27 downto 0) := 100000000; -- 2 seconds
+    constant half_period_ns: unsigned(27 downto 0) := period_ns / 2;
+  begin
+    if rising_edge(clock) then
+      if (clock_div_counter > half_period_ns) then
+        if (clock_div_counter > period_ns) then
+          game_clock <= '0';
+        else game_clock <= '1';
+        end if;
+      else
+        -- don't know if necessary
+        -- game_clock <= game_clock;
+      end if;
+      clock_div_counter := clock_div_counter + 1;
+    end if;
+  end process;
   SEQ_GEN: sequence_generator port map (
-    clk => clock,
+    clk => game_clock,
     enable => new_symbol,
     reset => reset_sequence,
     sequence => sequence,
@@ -55,7 +75,7 @@ begin
   );
 
   ST_MACH: game_st_mach port map (
-    clock => clock,
+    clock => game_clock,
     player_input => player_input,
     sequence => sequence,
     sequence_finished => sequence_finished,
@@ -69,13 +89,33 @@ begin
   );
 
   WAKEUP_GEN: wakeup <= or_reduce(buttons);
-  TEACH_END_GEN: teach_end <= '0'; -- FIXME
-  PLAYER_INPUT_MARSHALL: block begin
-    player_input.blue <= buttons(0);
-    player_input.yellow <= buttons(1);
-    player_input.green <= buttons(2);
-    player_input.red <= buttons(3);
-  end block;
+  TEACH_END_GEN: teach_end <= '1'; -- FIXME
+  PLAYER_INPUT_FILTER: process(buttons, game_clock)
+    variable blue, yellow, green, red: std_logic := '0';
+  begin
+    blue := buttons(0) or blue;
+    yellow := buttons(1) or yellow;
+    green := buttons(2) or green;
+    red := buttons(3) or red;
+    
+    if rising_edge(game_clock) then
+      if (std_logic(player_input.blue
+                    or player_input.yellow
+                    or player_input.green
+                    or player_input.red) = '1') then
+        -- do not clear if button held
+      else
+        blue := '0';
+        yellow := '0';
+        green := '0';
+        red := '0';
+      end if;
+    end if;
+    player_input.blue <= blue;
+    player_input.yellow <= yellow;
+    player_input.green <= green;
+    player_input.red <= red;
+  end process;
 
   -- sequence_finished <= std_logic(sequence_finished_bool);
   with sequence_finished_bool select sequence_finished <=

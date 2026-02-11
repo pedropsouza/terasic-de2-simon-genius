@@ -26,14 +26,22 @@ architecture behav of game_st_mach is
   signal cur_stage, next_stage: game_stage_t := ASLEEP;
   signal correct_symbol: sequence_item_t;
   signal sequence_needle: unsigned(4 downto 0);
+  signal needle_clk: std_logic := '0';
+  signal test_finished: std_logic := '0';
   signal is_correct: std_logic;
 begin
 
-  FETCH_CORRECT: process (sequence, sequence_needle)
+  correct_symbol <= sequence.arr(to_integer(sequence_needle));
+	 
+  NEEDLE_PROC: process (needle_clk, cur_stage)
   begin
-    correct_symbol <= sequence.arr(to_integer(sequence_needle));
+    if not (cur_stage = TEST) then
+	   sequence_needle <= to_unsigned(0, 5);
+    elsif rising_edge(needle_clk) then
+      sequence_needle <= sequence_needle + 1;
+	 end if;
   end process;
-
+  
   INPUT_TEST: block
   begin
     with correct_symbol select is_correct <=
@@ -42,6 +50,7 @@ begin
       player_input.green when GREEN,
       player_input.red when RED,
       '0' when others;
+	  test_finished <= '1' when (sequence_needle > sequence.len) or (sequence_needle = sequence.len) else '0';
   end block;
   
   STAGE_REG_PROC: process (clock)
@@ -58,6 +67,7 @@ begin
       when ASLEEP =>
         new_symbol <= '0';
         reset_sequence <= '0';
+		  needle_clk <= '0';
         
         if wakeup = '1'
         then next_stage <= TEACH;
@@ -66,7 +76,8 @@ begin
       when TEACH =>
         new_symbol <= '0';
         reset_sequence <= '0';
-
+		  needle_clk <= '0';
+		  
         if teach_end = '1'
         then next_stage <= TEST;
         else next_stage <= TEACH;
@@ -74,6 +85,7 @@ begin
       when TEST =>
         new_symbol <= '0';
         reset_sequence <= '0';
+		  needle_clk <= '0';
         
         if (   std_logic(player_input.blue
             or player_input.yellow
@@ -89,8 +101,14 @@ begin
       when PASS =>
         new_symbol <= '1';
         reset_sequence <= '0';
-        next_stage <= TEST;
+		  if test_finished = '1' then
+		    next_stage <= TEACH;
+		  else
+          next_stage <= TEST;
+		  end if;
+		  needle_clk <= '1';
       when others =>
+		  needle_clk <= '0';
         new_symbol <= '0';
         reset_sequence <= '1';
         next_stage <= ASLEEP;

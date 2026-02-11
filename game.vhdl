@@ -8,8 +8,10 @@ use work.simon_game.all;
 entity game is port(
   clock: std_logic;
   buttons: in std_logic_vector(3 downto 0);
-  lights: out std_logic_vector(3 downto 0)
+  lights: out std_logic_vector(3 downto 0);
   -- TODO: the whole audio thing
+  game_clock_out: out std_logic;
+  state_debug: out std_logic_vector(4 downto 0)
 ); end entity;
 
 architecture arch of game is
@@ -51,6 +53,7 @@ architecture arch of game is
   signal reset_sequence: std_logic;
   signal sequence_finished: std_logic;
   signal sequence_finished_bool: boolean;
+  signal teach_enable: std_logic;
   signal teach_end: std_logic;
 
   signal stage: game_stage_t := ASLEEP;
@@ -64,13 +67,14 @@ begin
   GAME_CLOCK_GEN: process(clock)
     -- remember to check if the set period constants won't overflow the counters
     variable clock_div_counter: unsigned(27 downto 0) := to_unsigned(0, 28);
-    constant period_ns: unsigned(27 downto 0) := to_unsigned(100000000, 28); -- 2 seconds
+    constant period_ns: unsigned(27 downto 0) := to_unsigned(25000000, 28); -- 0.5 seconds
     constant half_period_ns: unsigned(27 downto 0) := period_ns / 2;
   begin
     if rising_edge(clock) then
       if (clock_div_counter > half_period_ns) then
         if (clock_div_counter > period_ns) then
           game_clock <= '0';
+			 clock_div_counter := to_unsigned(0, 28);
         else game_clock <= '1';
         end if;
       else
@@ -80,6 +84,8 @@ begin
       clock_div_counter := clock_div_counter + 1;
     end if;
   end process;
+  game_clock_out <= game_clock;
+  
   SEQ_GEN: sequence_generator port map (
     clk => game_clock,
     enable => new_symbol,
@@ -101,14 +107,22 @@ begin
     reset_sequence => reset_sequence,
     stage => stage
   );
+  
+  -- debug aid
+  with stage select state_debug <=
+    "01111" when ASLEEP,
+	 "10111" when TEACH,
+	 "11011" when TEST,
+	 "11101" when PASS,
+	 "11110" when FAIL,
+	 "11111" when others;
 
-  WAKEUP_GEN: wakeup <= or_reduce(buttons);
+  WAKEUP_GEN: wakeup <= or_reduce(latched_symbol);
   TEACH_BLK: block
-    signal teach_enable: std_logic := '0';
   begin
     with stage select teach_enable <= '1' when TEACH, '0' when others;
   TEACHER_INST: teacher port map (
-    clock => clock,
+    clock => game_clock,
     enable => teach_enable,
     sequence => sequence,
     finished => teach_end,
@@ -122,7 +136,7 @@ begin
     -- one-hot encoding of possibly "many-hot" buttons vector
     variable latched_symbol_store: std_logic_vector(3 downto 0) := "0000";
   begin
-    if new_symbol = '1' then
+    if new_symbol = '1' or reset_sequence = '1' or teach_enable = '1' then
       latched_symbol_store := "0000";
     elsif rising_edge(any_btn_pressed) then
       if not (or_reduce(latched_symbol_store) = '1') then
@@ -158,10 +172,10 @@ begin
   LIGHTS_OUT: block
   begin
     lights <= (
-      teacher_lights.blue or buttons(0),
-      teacher_lights.yellow or buttons(1),
-      teacher_lights.green or buttons(2),
-      teacher_lights.red or buttons(3)
+      (teacher_lights.blue or latched_symbol(0)),
+      (teacher_lights.yellow or latched_symbol(1)),
+      (teacher_lights.green or latched_symbol(2)),
+      (teacher_lights.red or latched_symbol(3))
     );
   end block;
 end architecture;

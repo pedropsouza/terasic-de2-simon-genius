@@ -96,4 +96,6 @@ begin
         next_stage <= ASLEEP;
     end case;
   end process;
+
+  stage <= cur_stage;
 end architecture;

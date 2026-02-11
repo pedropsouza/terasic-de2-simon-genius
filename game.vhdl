@@ -36,17 +36,30 @@ architecture arch of game is
     );
   end component;
 
+  component teacher is port(
+    clock, enable: in std_logic;
+    sequence: in sequence_t;
+    finished: out std_logic;
+    lights: out lights_t
+  ); end component;
+
   signal player_input: input_t;
   signal sequence: sequence_t;
   signal wakeup: std_logic;
-  signal teach_end: std_logic;
   
   signal new_symbol: std_logic;
   signal reset_sequence: std_logic;
   signal sequence_finished: std_logic;
   signal sequence_finished_bool: boolean;
+  signal teach_end: std_logic;
+
   signal stage: game_stage_t := ASLEEP;
   signal game_clock: std_logic := '0';
+  
+  signal any_btn_pressed: std_logic := '0';
+  signal latched_symbol: std_logic_vector(3 downto 0) := "0000";
+
+  signal teacher_lights: lights_t;
 begin
   GAME_CLOCK_GEN: process(clock)
     -- remember to check if the set period constants won't overflow the counters
@@ -90,38 +103,65 @@ begin
   );
 
   WAKEUP_GEN: wakeup <= or_reduce(buttons);
-  TEACH_END_GEN: teach_end <= '1'; -- FIXME
-  PLAYER_INPUT_FILTER: process(buttons, game_clock)
-    variable blue, yellow, green, red: std_logic := '0';
+  TEACH_BLK: block
+    signal teach_enable: std_logic := '0';
   begin
-    -- we need to implement latching for the buttons still
-    --blue := buttons(0) or blue;
-    --yellow := buttons(1) or yellow;
-    --green := buttons(2) or green;
-    --red := buttons(3) or red;
-    
-    if rising_edge(game_clock) then
-      if (or_reduce(buttons) = '1') then
-        -- do not clear if button held
-        blue := '0';
-        yellow := '0';
-        green := '0';
-        red := '0';
-      else
-        blue := '0';
-        yellow := '0';
-        green := '0';
-        red := '0';
+    with stage select teach_enable <= '1' when TEACH, '0' when others;
+  TEACHER_INST: teacher port map (
+    clock => clock,
+    enable => teach_enable,
+    sequence => sequence,
+    finished => teach_end,
+    lights => teacher_lights
+  );
+  end block;
+
+  ANY_BTN_DETECTOR: any_btn_pressed <= or_reduce(buttons);
+
+  SYMBOL_LATCH: process(any_btn_pressed, new_symbol)
+    -- one-hot encoding of possibly "many-hot" buttons vector
+    variable latched_symbol_store: std_logic_vector(3 downto 0) := "0000";
+  begin
+    if new_symbol = '1' then
+      latched_symbol_store := "0000";
+    elsif rising_edge(any_btn_pressed) then
+      if not (or_reduce(latched_symbol_store) = '1') then
+        latched_symbol_store := buttons;
       end if;
     end if;
-    player_input.blue <= blue;
-    player_input.yellow <= yellow;
-    player_input.green <= green;
-    player_input.red <= red;
+    latched_symbol <= latched_symbol_store;
+  end process;
+  
+  PLAYER_INPUT_FILTER: process(buttons, game_clock)
+  begin
+    if rising_edge(game_clock) then
+      if not any_btn_pressed = '1' then
+        case latched_symbol is
+          when "0001" => player_input <= (blue => '1', yellow => '0', green => '0', red => '0');
+          when "0010" => player_input <= (blue => '0', yellow => '1', green => '0', red => '0');
+          when "0100" => player_input <= (blue => '0', yellow => '0', green => '1', red => '0');
+          when "1000" => player_input <= (blue => '0', yellow => '0', green => '0', red => '1');
+          when others => player_input <= (blue => '0', yellow => '0', green => '0', red => '0');
+        end case;
+      else
+        player_input <= (blue => '0', yellow => '0', green => '0', red => '0');
+      end if;
+    end if;
+    
   end process;
 
   -- sequence_finished <= std_logic(sequence_finished_bool);
   with sequence_finished_bool select sequence_finished <=
     '1' when true,
     '0' when others;
+
+  LIGHTS_OUT: block
+  begin
+    lights <= (
+      teacher_lights.blue or buttons(0),
+      teacher_lights.yellow or buttons(1),
+      teacher_lights.green or buttons(2),
+      teacher_lights.red or buttons(3)
+    );
+  end block;
 end architecture;

@@ -22,6 +22,7 @@ begin
   begin
     clock <= '0', '1' after 10 ns;
   -- repeat indefinitely
+    wait for 20 ns;
   end process;
   
   PERFECT_PLAYER: process

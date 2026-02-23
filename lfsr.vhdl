@@ -31,7 +31,7 @@ begin
 
   linear_feedback <= not(count(width-1) xor count(width/2));
 
-  process (CLK, SCLR, CE) begin
+  process (CLK, SCLR, CE, count) begin
     if (SCLR = '1') then
       cout <= (others=>'0');
     else

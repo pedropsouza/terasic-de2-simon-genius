@@ -42,16 +42,15 @@ begin
 	 end if;
   end process;
   
-  INPUT_TEST: block
-  begin
-    with correct_symbol select is_correct <=
-      player_input.blue when BLUE,
-      player_input.yellow when YELLOW,
-      player_input.green when GREEN,
-      player_input.red when RED,
-      '0' when others;
-	  test_finished <= '1' when (sequence_needle > sequence.len) or (sequence_needle = sequence.len) else '0';
-  end block;
+  INPUT_TEST:
+  with correct_symbol select is_correct <=
+    player_input.blue when BLUE,
+    player_input.yellow when YELLOW,
+	 player_input.green when GREEN,
+	 player_input.red when RED,
+	 '0' when others;
+  test_finished <= '1' when (sequence_needle > sequence.len) else '0';
+  -- test_finished <= '1' when (sequence_needle > sequence.len) or (sequence_needle = sequence.len) else '0';
   
   STAGE_REG_PROC: process (clock)
   begin
@@ -61,7 +60,7 @@ begin
   end process;
 
   STAGE_TRANSITIONS: process
-    (cur_stage, player_input, wakeup, teach_end, sequence_finished, is_correct)
+    (cur_stage, player_input, wakeup, teach_end, sequence_finished, is_correct, test_finished)
   begin
     case cur_stage is
       when ASLEEP =>
@@ -107,11 +106,16 @@ begin
           next_stage <= TEST;
 		  end if;
 		  needle_clk <= '1';
-      when others =>
+      when FAIL =>
 		  needle_clk <= '0';
         new_symbol <= '0';
         reset_sequence <= '1';
         next_stage <= ASLEEP;
+		when others =>
+		  needle_clk <= '0';
+        new_symbol <= '0';
+        reset_sequence <= '1';
+        next_stage <= ERROR;
     end case;
   end process;
 

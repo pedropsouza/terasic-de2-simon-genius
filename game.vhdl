@@ -132,7 +132,7 @@ begin
 
   ANY_BTN_DETECTOR: any_btn_pressed <= or_reduce(buttons);
 
-  SYMBOL_LATCH: process(any_btn_pressed, new_symbol)
+  SYMBOL_LATCH: process(any_btn_pressed, new_symbol, reset_sequence, teach_enable)
     -- one-hot encoding of possibly "many-hot" buttons vector
     variable latched_symbol_store: std_logic_vector(3 downto 0) := "0000";
   begin

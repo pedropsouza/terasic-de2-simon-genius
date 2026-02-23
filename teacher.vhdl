@@ -18,9 +18,10 @@ architecture arch of teacher is
   signal gated_clock: std_logic := '0';
   signal inner_lights: lights_t;
 begin
-  finished <= '1' when ((i > sequence.len) or (i = sequence.len)) else '0';
+  finished <= '1' when ((i > sequence.len)) else '0';
+  -- finished <= '1' when ((i > sequence.len) or (i = sequence.len)) else '0';
   gated_clock <= enable and clock;
-  TEACH_PROC: process(gated_clock, enable)
+  TEACH_PROC: process(clock, gated_clock, enable, i)
   begin
     if rising_edge(clock) then
       next_i <= to_unsigned(0, 5);

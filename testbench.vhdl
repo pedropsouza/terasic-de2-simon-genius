@@ -22,18 +22,14 @@ begin
   begin
     clock <= '0', '1' after 10 ns;
   -- repeat indefinitely
-    wait for 20 ns;
   end process;
   
   PERFECT_PLAYER: process
     -- dunno why i didn't just instance the same generator with the same seed
     constant sequence: sequence_t := (
-      arr => (
-        BLUE, BLUE, BLUE, YELLOW, YELLOW, YELLOW, YELLOW, RED, GREEN,
-        GREEN, GREEN, RED, YELLOW, BLUE, BLUE, GREEN, GREEN, BLUE, YELLOW,
-        BLUE, BLUE, YELLOW, RED, BLUE, YELLOW, RED, RED, BLUE, RED, RED,
-        RED, BLUE),
-      len => to_unsigned(32, 5));
+      arr => ( BLUE, BLUE, RED, BLUE
+        ),
+      len => to_unsigned(4, 3));
   begin
     -- wakeup and get taught
     buttons(0) <= '1', '0' after 100 ns;

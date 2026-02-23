@@ -42,7 +42,7 @@ architecture behav of sequence_generator is
   signal next_item: sequence_item_t;
 begin
   GENERATOR: lfsr generic map (
-      seed => 0,
+      seed => 42,
       width => 8
     ) port map (
     cout => random_num,
@@ -52,25 +52,25 @@ begin
     );
 
   next_item <= item_from_num(random_num);
-  PROC: process (clk, reset)
+  PROC: process (clk, reset, enable)
     variable sequence_store: sequence_arr_t := (others => BLUE);
-    variable sequence_len_store: unsigned(4 downto 0) := "00000";
-    variable next_len: unsigned(5 downto 0) := "000000";
+    variable sequence_len_store: unsigned(2 downto 0) := "000";
+    variable next_len: unsigned(3 downto 0) := "0000";
     variable finished_store: boolean := false;
   begin
     if (reset = '1') then
       sequence_store := (others => BLUE);
-      sequence_len_store := "00000";
+      sequence_len_store := "000";
       finished_store := false;
     elsif (enable = '1' and rising_edge(clk) and not finished_store) then
       sequence_store(to_integer(sequence_len_store)) := next_item;
-      next_len := resize(sequence_len_store, 6) + 1; -- might be better to use a
+      next_len := resize(sequence_len_store, 4) + 1; -- might be better to use a
                                           -- shift register for this
-      if (next_len > 31) then
+      if (next_len > 4) then
         -- report "got to the overflow guard";
         finished_store := true;
       else
-        sequence_len_store := next_len(4 downto 0);
+        sequence_len_store := next_len(2 downto 0);
       end if;
     end if;
 

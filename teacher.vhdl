@@ -16,7 +16,7 @@ architecture arch of teacher is
   signal i, next_i: unsigned(4 downto 0) := to_unsigned(0, 5);
   signal cur_symb: sequence_item_t;
   signal gated_clock: std_logic := '0';
-  signal inner_lights: lights_t;
+  signal inner_lights: lights_t := ( blue => '0', yellow => '0', green => '0', red => '0' );
 begin
   finished <= '1' when ((i > sequence.len)) else '0';
   -- finished <= '1' when ((i > sequence.len) or (i = sequence.len)) else '0';

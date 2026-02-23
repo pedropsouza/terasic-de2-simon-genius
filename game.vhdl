@@ -5,7 +5,14 @@ use IEEE.std_logic_misc.all; -- Contains or_reduce
 use IEEE.numeric_std.all;
 use work.simon_game.all;
 
-entity game is port(
+-- variable clock_div_counter: unsigned(27 downto 0) := to_unsigned(0, 28);
+-- constant period_ns: unsigned(27 downto 0) := to_unsigned(25000000, 28); -- 0.5 seconds
+-- c onstant half_period_ns: unsigned(27 downto 0) := period_ns / 2;
+entity game is
+  generic(
+    GAMELOOP_CLOCK_PERIOD: natural := 25000000 -- 0.5 sec by default
+  );
+  port(
   clock: std_logic;
   buttons: in std_logic_vector(3 downto 0);
   lights: out std_logic_vector(3 downto 0);
@@ -45,7 +52,7 @@ architecture arch of game is
     lights: out lights_t
   ); end component;
 
-  signal player_input: input_t;
+  signal player_input: input_t := (blue => '0', yellow => '0', green => '0', red => '0');
   signal sequence: sequence_t;
   signal wakeup: std_logic;
   
@@ -64,17 +71,22 @@ architecture arch of game is
 
   signal teacher_lights: lights_t;
 begin
+  INVARIANTS_CHECK: process
+  begin
+    assert(shift_left(to_unsigned(GAMELOOP_CLOCK_PERIOD, 40), 32) /= 1);
+    wait;
+  end process;
   GAME_CLOCK_GEN: process(clock)
     -- remember to check if the set period constants won't overflow the counters
-    variable clock_div_counter: unsigned(27 downto 0) := to_unsigned(0, 28);
-    constant period_ns: unsigned(27 downto 0) := to_unsigned(25000000, 28); -- 0.5 seconds
-    constant half_period_ns: unsigned(27 downto 0) := period_ns / 2;
+    variable clock_div_counter: unsigned(31 downto 0) := to_unsigned(0, 32);
+    constant period_cycl: unsigned(31 downto 0) := to_unsigned(GAMELOOP_CLOCK_PERIOD, 32); -- 0.5 seconds
+    constant half_period_cycl: unsigned(31 downto 0) := period_cycl / 2;
   begin
     if rising_edge(clock) then
-      if (clock_div_counter > half_period_ns) then
-        if (clock_div_counter > period_ns) then
+      if (clock_div_counter > half_period_cycl) then
+        if (clock_div_counter > period_cycl) then
           game_clock <= '0';
-			 clock_div_counter := to_unsigned(0, 28);
+			 clock_div_counter := to_unsigned(0, 32);
         else game_clock <= '1';
         end if;
       else

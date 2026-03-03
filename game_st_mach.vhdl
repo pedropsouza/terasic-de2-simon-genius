@@ -66,7 +66,7 @@ begin
       when ASLEEP =>
         new_symbol <= '0';
         reset_sequence <= '0';
-		  needle_clk <= '0';
+        needle_clk <= '0';
         
         if wakeup = '1'
         then next_stage <= TEACH;
@@ -75,8 +75,8 @@ begin
       when TEACH =>
         new_symbol <= '0';
         reset_sequence <= '0';
-		  needle_clk <= '0';
-		  
+        needle_clk <= '0';
+
         if teach_end = '1'
         then next_stage <= TEST;
         else next_stage <= TEACH;

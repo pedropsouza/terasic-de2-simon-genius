@@ -24,7 +24,6 @@ begin
   TEACH_PROC: process(clock, gated_clock, enable, i)
   begin
     if rising_edge(clock) then
-      next_i <= to_unsigned(0, 5);
 		if enable = '1' then
 		  i <= next_i;
 		else

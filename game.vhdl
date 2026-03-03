@@ -71,11 +71,13 @@ architecture arch of game is
 
   signal teacher_lights: lights_t;
 begin
-  INVARIANTS_CHECK: process
-  begin
-    assert(shift_left(to_unsigned(GAMELOOP_CLOCK_PERIOD, 40), 32) /= 1);
-    wait;
-  end process;
+  -- these tests are not synthesizable, but you should take care to not put out
+  -- of range values for the generics (we didn't encode it in the type system,
+  -- i hate how type casting works in VHDL)
+  --INVARIANTS_CHECK: process
+  --begin
+  --  assert(shift_left(to_unsigned(GAMELOOP_CLOCK_PERIOD, 40), 32) /= 1);
+  --end process;
   GAME_CLOCK_GEN: process(clock)
     -- remember to check if the set period constants won't overflow the counters
     variable clock_div_counter: unsigned(31 downto 0) := to_unsigned(0, 32);

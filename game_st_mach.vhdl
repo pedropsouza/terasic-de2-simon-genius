@@ -31,8 +31,6 @@ architecture behav of game_st_mach is
   signal is_correct: std_logic;
 begin
 
-  correct_symbol <= sequence.arr(to_integer(sequence_needle));
-	 
   NEEDLE_PROC: process (needle_clk, cur_stage)
   begin
     if not (cur_stage = TEST) then
@@ -40,6 +38,16 @@ begin
     elsif rising_edge(needle_clk) then
       sequence_needle <= sequence_needle + 1;
 	 end if;
+  end process;
+
+  RETRIEVE_SYMBOL_PROC: process (clock)
+  begin
+    if rising_edge(clock) then
+      -- shouldn't race -- needle is incremented on X -> PASS transition
+      -- and this assignment runs every transition
+      -- (including the X -> TEST transition we are interested in)
+      correct_symbol <= sequence.arr(to_integer(sequence_needle));
+    end if;
   end process;
   
   INPUT_TEST:
@@ -59,6 +67,8 @@ begin
     end if;
   end process;
 
+  -- this should lodge exclusively combinational logic using the
+  -- other latched/registered variables
   STAGE_TRANSITIONS: process
     (cur_stage, player_input, wakeup, teach_end, sequence_finished, is_correct, test_finished)
   begin
@@ -84,9 +94,10 @@ begin
       when TEST =>
         new_symbol <= '0';
         reset_sequence <= '0';
-		  needle_clk <= '0';
+        needle_clk <= '0';
         
-        if (   std_logic(player_input.blue
+        if (std_logic(
+               player_input.blue
             or player_input.yellow
             or player_input.green
             or player_input.red) = '1')
@@ -100,19 +111,19 @@ begin
       when PASS =>
         new_symbol <= '1';
         reset_sequence <= '0';
-		  if test_finished = '1' then
-		    next_stage <= TEACH;
-		  else
+        if test_finished = '1' then
+          next_stage <= TEACH;
+        else
           next_stage <= TEST;
-		  end if;
-		  needle_clk <= '1';
+        end if;
+        needle_clk <= '1';
       when FAIL =>
-		  needle_clk <= '0';
+        needle_clk <= '0';
         new_symbol <= '0';
         reset_sequence <= '1';
         next_stage <= ASLEEP;
-		when others =>
-		  needle_clk <= '0';
+      when others =>
+        needle_clk <= '0';
         new_symbol <= '0';
         reset_sequence <= '1';
         next_stage <= ERROR;

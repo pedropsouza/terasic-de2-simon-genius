@@ -20,12 +20,12 @@ package simon_game is
   end record;
 
   -- ordered as to match how the game goes, roughly
-  type game_stage_t is (ASLEEP, TEACH, TEST, PASS, FAIL, ERROR);
+  type game_stage_t is (ASLEEP, INIT, TEACH, TEST, PASS, FAIL, SEQ_PASS, ERROR);
   type sequence_item_t is (BLUE, YELLOW, GREEN, RED);
-  type sequence_arr_t is array (0 to 3) of sequence_item_t;
+  type sequence_arr_t is array (0 to 7) of sequence_item_t;
   type sequence_t is record
     arr : sequence_arr_t;
-    len : unsigned(2 downto 0);
+    len : unsigned(3 downto 0);
   end record;
   
   attribute enum_encoding: string;

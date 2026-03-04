@@ -18,7 +18,8 @@ entity game is
   lights: out std_logic_vector(3 downto 0);
   -- TODO: the whole audio thing
   game_clock_out: out std_logic;
-  state_debug: out std_logic_vector(4 downto 0)
+  state_debug: out std_logic_vector(4 downto 0);
+  sequence_debug: out sequence_t
 ); end entity;
 
 architecture arch of game is
@@ -81,21 +82,23 @@ begin
   GAME_CLOCK_GEN: process(clock)
     -- remember to check if the set period constants won't overflow the counters
     variable clock_div_counter: unsigned(31 downto 0) := to_unsigned(0, 32);
-    constant period_cycl: unsigned(31 downto 0) := to_unsigned(GAMELOOP_CLOCK_PERIOD, 32); -- 0.5 seconds
+    constant period_cycl: unsigned(31 downto 0) := to_unsigned(GAMELOOP_CLOCK_PERIOD, 32);
     constant half_period_cycl: unsigned(31 downto 0) := period_cycl / 2;
+    variable past_half, past_full: boolean;
   begin
     if rising_edge(clock) then
-      if (clock_div_counter > half_period_cycl) then
-        if (clock_div_counter > period_cycl) then
+      clock_div_counter := clock_div_counter + 1;
+      PAST_HALF_CLOGIC: past_half := not (clock_div_counter < half_period_cycl);
+      PAST_FULL_CLOGIC: past_full := not (clock_div_counter < period_cycl);
+      if past_half then
+        if past_full then
+          clock_div_counter := to_unsigned(0, 32);
           game_clock <= '0';
-			 clock_div_counter := to_unsigned(0, 32);
-        else game_clock <= '1';
+        else
+          game_clock <= '1';
         end if;
       else
-        -- don't know if necessary
-        -- game_clock <= game_clock;
       end if;
-      clock_div_counter := clock_div_counter + 1;
     end if;
   end process;
   game_clock_out <= game_clock;
@@ -107,6 +110,7 @@ begin
     sequence => sequence,
     finished => sequence_finished_bool
   );
+  sequence_debug <= sequence;
 
   ST_MACH: game_st_mach port map (
     clock => game_clock,

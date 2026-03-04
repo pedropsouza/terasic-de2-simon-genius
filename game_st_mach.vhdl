@@ -57,8 +57,8 @@ begin
 	 player_input.green when GREEN,
 	 player_input.red when RED,
 	 '0' when others;
-  test_finished <= '1' when (sequence_needle > sequence.len) else '0';
-  -- test_finished <= '1' when (sequence_needle > sequence.len) or (sequence_needle = sequence.len) else '0';
+  TEST_FINISHED_CLOGIC:
+    test_finished <= '1' when (sequence_needle > sequence.len) or (sequence_needle = sequence.len) else '0';
   
   STAGE_REG_PROC: process (clock)
   begin
@@ -79,9 +79,14 @@ begin
         needle_clk <= '0';
         
         if wakeup = '1'
-        then next_stage <= TEACH;
+        then next_stage <= INIT;
         else next_stage <= ASLEEP;
         end if;
+      when INIT =>
+        new_symbol <= '1';
+        reset_sequence <= '0';
+        needle_clk <= '0';
+        next_stage <= TEACH;
       when TEACH =>
         new_symbol <= '0';
         reset_sequence <= '0';
@@ -109,10 +114,10 @@ begin
         else next_stage <= TEST;
         end if;
       when PASS =>
-        new_symbol <= '1';
+        new_symbol <= '0';
         reset_sequence <= '0';
         if test_finished = '1' then
-          next_stage <= TEACH;
+          next_stage <= SEQ_PASS;
         else
           next_stage <= TEST;
         end if;
@@ -122,6 +127,12 @@ begin
         new_symbol <= '0';
         reset_sequence <= '1';
         next_stage <= ASLEEP;
+      when SEQ_PASS =>
+        needle_clk <= '0';
+        new_symbol <= '1';
+        reset_sequence <= '0';
+        next_stage <= TEACH;
+        -- if sequence.len > maxlen then win condition? FIXME / TODO
       when others =>
         needle_clk <= '0';
         new_symbol <= '0';

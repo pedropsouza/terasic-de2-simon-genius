@@ -10,7 +10,8 @@ architecture simon_arch of simon_tb is
   signal buttons: std_logic_vector(3 downto 0) := (others => '0');
   signal button_lights: std_logic_vector(3 downto 0) := (others => '0');
   signal clock: std_logic;
-  signal game_stage: game_stage_t;
+  signal game_clock: std_logic;
+  signal sequence: sequence_t;
 begin
   UUT: entity work.game
   generic map(
@@ -19,8 +20,12 @@ begin
   port map(
     clock => clock,
     buttons => buttons,
-    lights => button_lights
-);
+    lights => button_lights,
+    game_clock_out => game_clock,
+    state_debug => open, -- can't/won't retrieve stage info from an arbitrary
+                        -- bit repr
+    sequence_debug => sequence
+  );
   
   CLOCK_SIM: process
   begin
@@ -30,20 +35,27 @@ begin
   end process;
   
   PERFECT_PLAYER: process
-    -- dunno why i didn't just instance the same generator with the same seed
-    constant sequence: sequence_t := (
-      arr => ( BLUE, BLUE, RED, BLUE
-        ),
-      len => to_unsigned(4, 3));
+    variable i: integer := 1;
+    variable l: boolean := true;
   begin
     -- wakeup and get taught
-    buttons(0) <= '1', '0' after 50 ns;
+    buttons(0) <= '1', '0' after 120 ns;
 
-    wait for 100 ns;
+    -- sync to the hi-lo period (instead of the lo-hi)
+    wait until rising_edge(game_clock);
+    -- INIT takes one period
+    wait until rising_edge(game_clock);
 
     -- play perfectly
-    for i in 1 to to_integer(sequence.len) loop
-      wait for i * 80 ns + 160 ns; -- teaching phase
+    -- 20 ns is the period of the 50 Mhz clock
+    -- one game clock is 4 * 20 ns = 80 ns
+    -- no clue if this re-evaluates the end of the range like i expect it to
+    -- for i in 1 to to_integer(sequence.len) loop -- (it didn't)
+    while l loop
+      for j in 0 to i loop
+        -- teaching takes i + 1 periods
+        wait until rising_edge(game_clock);
+      end loop;
       for j in 0 to i - 1 loop
         case sequence.arr(j) is
           when BLUE => buttons(0) <= '1', '0' after 40 ns;
@@ -51,8 +63,13 @@ begin
           when GREEN => buttons(2) <= '1', '0' after 40 ns;
           when RED => buttons(3) <= '1', '0' after 40 ns;
         end case; 
-        wait for 80 ns;
+        wait until rising_edge(game_clock);
+        wait for 20 ns;
       end loop;
+      i := i + 1;
+      if i > to_integer(sequence.len) then
+        l := false;
+      end if;
     end loop;
     wait; -- do not repeat
   end process;

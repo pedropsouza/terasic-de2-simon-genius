@@ -27,13 +27,13 @@ architecture behav of game_st_mach is
   signal correct_symbol: sequence_item_t;
   signal sequence_needle: unsigned(4 downto 0);
   signal needle_clk: std_logic := '0';
-  signal test_finished: std_logic := '0';
+  signal test_finishing: std_logic := '0';
   signal is_correct: std_logic;
 begin
 
   NEEDLE_PROC: process (needle_clk, cur_stage)
   begin
-    if not (cur_stage = TEST) then
+    if not (cur_stage = TEST or cur_stage = PASS) then
 	   sequence_needle <= to_unsigned(0, 5);
     elsif rising_edge(needle_clk) then
       sequence_needle <= sequence_needle + 1;
@@ -57,8 +57,10 @@ begin
 	 player_input.green when GREEN,
 	 player_input.red when RED,
 	 '0' when others;
-  TEST_FINISHED_CLOGIC:
-    test_finished <= '1' when (sequence_needle > sequence.len) or (sequence_needle = sequence.len) else '0';
+  TEST_FINISHING_CLOGIC:
+    -- needs to be high by the time the last PASS is reached, hence the
+    -- finishING instead of finished
+    test_finishing <= '1' when not (sequence_needle < sequence.len) else '0';
   
   STAGE_REG_PROC: process (clock)
   begin
@@ -70,7 +72,7 @@ begin
   -- this should lodge exclusively combinational logic using the
   -- other latched/registered variables
   STAGE_TRANSITIONS: process
-    (cur_stage, player_input, wakeup, teach_end, sequence_finished, is_correct, test_finished)
+    (cur_stage, player_input, wakeup, teach_end, sequence_finished, is_correct, test_finishing)
   begin
     case cur_stage is
       when ASLEEP =>
@@ -116,12 +118,12 @@ begin
       when PASS =>
         new_symbol <= '0';
         reset_sequence <= '0';
-        if test_finished = '1' then
+        needle_clk <= '1';
+        if test_finishing = '1' then
           next_stage <= SEQ_PASS;
         else
           next_stage <= TEST;
         end if;
-        needle_clk <= '1';
       when FAIL =>
         needle_clk <= '0';
         new_symbol <= '0';

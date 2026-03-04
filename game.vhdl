@@ -135,7 +135,7 @@ begin
 	 "11110" when FAIL,
 	 "11111" when others;
 
-  WAKEUP_GEN: wakeup <= or_reduce(latched_symbol);
+  WAKEUP_GEN: wakeup <= or_reduce(buttons);
   TEACH_BLK: block
   begin
     with stage select teach_enable <= '1' when TEACH, '0' when others;
@@ -150,11 +150,12 @@ begin
 
   ANY_BTN_DETECTOR: any_btn_pressed <= or_reduce(buttons);
 
-  SYMBOL_LATCH: process(any_btn_pressed, new_symbol, reset_sequence, teach_enable)
+  SYMBOL_LATCH: process(any_btn_pressed, new_symbol, reset_sequence, teach_enable, stage)
     -- one-hot encoding of possibly "many-hot" buttons vector
     variable latched_symbol_store: std_logic_vector(3 downto 0) := "0000";
   begin
-    if new_symbol = '1' or reset_sequence = '1' or teach_enable = '1' then
+    --if new_symbol = '1' or reset_sequence = '1' or teach_enable = '1' then
+    if not (stage = TEST) then
       latched_symbol_store := "0000";
     elsif rising_edge(any_btn_pressed) then
       if not (or_reduce(latched_symbol_store) = '1') then

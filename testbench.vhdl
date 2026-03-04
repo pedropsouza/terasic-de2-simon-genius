@@ -63,14 +63,16 @@ begin
           when GREEN => buttons(2) <= '1', '0' after 40 ns;
           when RED => buttons(3) <= '1', '0' after 40 ns;
         end case; 
-        wait until rising_edge(game_clock);
-        wait for 20 ns;
+        wait until rising_edge(game_clock); -- player_input ingest
+        wait until rising_edge(game_clock); -- PASS transition
+        wait until rising_edge(game_clock); -- TEST transition
       end loop;
+      wait until rising_edge(game_clock); -- SEQ_PASS transition
+      wait for 40 ns; -- miscellaneous delay, not sure if needed
       i := i + 1;
       if i > to_integer(sequence.len) then
-        l := false;
+        wait until not (i > to_integer(sequence.len)); -- trying something different
       end if;
     end loop;
-    wait; -- do not repeat
   end process;
 end architecture;

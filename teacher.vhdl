@@ -8,7 +8,7 @@ use work.simon_game.all;
 entity teacher is port(
   clock, enable: in std_logic;
   sequence: in sequence_t;
-  finished: out std_logic;
+  finishing: out std_logic;
   lights: out lights_t
 ); end entity;
 
@@ -18,7 +18,7 @@ architecture arch of teacher is
   signal gated_clock: std_logic := '0';
   signal inner_lights: lights_t := ( blue => '0', yellow => '0', green => '0', red => '0' );
 begin
-  finished <= '1' when not (i < sequence.len) else '0';
+  finishing <= '0' when (i < sequence.len) else '1';
   gated_clock <= enable and clock;
   TEACH_PROC: process(clock, gated_clock, enable, i)
   begin

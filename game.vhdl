@@ -38,7 +38,7 @@ architecture arch of game is
     sequence_finished: in std_logic;
 
     wakeup: in std_logic;
-    teach_end: in std_logic;
+    teach_ending: in std_logic;
     
     new_symbol: out std_logic;
     reset_sequence: out std_logic;
@@ -49,7 +49,7 @@ architecture arch of game is
   component teacher is port(
     clock, enable: in std_logic;
     sequence: in sequence_t;
-    finished: out std_logic;
+    finishing: out std_logic;
     lights: out lights_t
   ); end component;
 
@@ -62,7 +62,7 @@ architecture arch of game is
   signal sequence_finished: std_logic;
   signal sequence_finished_bool: boolean;
   signal teach_enable: std_logic;
-  signal teach_end: std_logic;
+  signal teach_ending: std_logic;
 
   signal stage: game_stage_t := ASLEEP;
   signal game_clock: std_logic := '0';
@@ -119,7 +119,7 @@ begin
     sequence_finished => sequence_finished,
 
     wakeup => wakeup,
-    teach_end => teach_end,
+    teach_ending => teach_ending,
 
     new_symbol => new_symbol,
     reset_sequence => reset_sequence,
@@ -143,7 +143,7 @@ begin
     clock => game_clock,
     enable => teach_enable,
     sequence => sequence,
-    finished => teach_end,
+    finishing => teach_ending,
     lights => teacher_lights
   );
   end block;

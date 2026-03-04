@@ -12,7 +12,7 @@ entity game_st_mach is port (
   sequence_finished: in std_logic;
 
   wakeup: in std_logic;
-  teach_end: in std_logic;
+  teach_ending: in std_logic;
   
   new_symbol: out std_logic;
   reset_sequence: out std_logic;
@@ -72,7 +72,7 @@ begin
   -- this should lodge exclusively combinational logic using the
   -- other latched/registered variables
   STAGE_TRANSITIONS: process
-    (cur_stage, player_input, wakeup, teach_end, sequence_finished, is_correct, test_finishing)
+    (cur_stage, player_input, wakeup, teach_ending, sequence_finished, is_correct, test_finishing)
   begin
     case cur_stage is
       when ASLEEP =>
@@ -94,7 +94,7 @@ begin
         reset_sequence <= '0';
         needle_clk <= '0';
 
-        if teach_end = '1'
+        if teach_ending = '1'
         then next_stage <= TEST;
         else next_stage <= TEACH;
         end if;
@@ -133,8 +133,16 @@ begin
         needle_clk <= '0';
         new_symbol <= '1';
         reset_sequence <= '0';
-        next_stage <= TEACH;
-        -- if sequence.len > maxlen then win condition? FIXME / TODO
+        if not (sequence.len < max_sequence_length) then
+          next_stage <= WIN;
+        else
+          next_stage <= TEACH;
+        end if;
+      when WIN =>
+        needle_clk <= '0';
+        new_symbol <= '0';
+        reset_sequence <= '1';
+        next_stage <= ASLEEP;
       when others =>
         needle_clk <= '0';
         new_symbol <= '0';
